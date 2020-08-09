@@ -1,6 +1,7 @@
 import Tinlake, { ITinlake } from 'tinlake'
 import { ContractAddresses } from 'tinlake/dist/Tinlake'
 import Eth from 'ethjs'
+import { ethers } from 'ethers'
 import config from '../../config'
 
 let tinlake: ITinlake | null = null
@@ -14,7 +15,15 @@ export function initTinlake({
 }: { addresses?: ContractAddresses | null; contractConfig?: any | null } = {}): ITinlake {
   if (tinlake === null) {
     const { transactionTimeout } = config
-    tinlake = new Tinlake({ transactionTimeout, provider: getDefaultHttpProvider() }) as any
+    const ethersProvider = new ethers.providers.Web3Provider(window.ethereum)
+    tinlake = new Tinlake({
+      transactionTimeout,
+      provider: getDefaultHttpProvider(),
+      ethers: {
+        provider: ethersProvider,
+        signer: ethersProvider.getSigner(),
+      },
+    }) as any
     tinlake!.setEthConfig({ gasLimit: `0x${config.gasLimit.toString(16)}` })
   }
 
@@ -46,6 +55,10 @@ export function getDefaultHttpProvider(): any {
   const { rpcUrl } = config
   const httpProvider = new Eth.HttpProvider(rpcUrl)
   return httpProvider
+}
+
+export function getDefaultEthersProvider(): ethers.providers.Provider {
+  return new ethers.providers.InfuraProvider('kovan', '092108ec6aea46ab97b2175b45130455')
 }
 
 function deepEqual(a: any, b: any): boolean {
